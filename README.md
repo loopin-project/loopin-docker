@@ -1,24 +1,24 @@
 # LooPIN Containers
 
-This repository contains the Dockerfiles for the LooPIN containers used for our official templates. Resulting containers are available on [Docker Hub](https://hub.docker.com/u/runpod).
+This repository contains the Dockerfiles for the LooPIN containers used for our official templates. Resulting containers are available on [Docker Hub].
 
 ## Changes
 
-The containers `serverless-automatic` and `sd-auto-abdbarho` have been removed from this repository. The worker replacement can be found in the [runpod-workers/worker-a1111](https://github.com/runpod-workers/worker-a1111) repository.
+The containers `serverless-automatic` and `sd-auto-abdbarho` have been removed from this repository.
 
 ## Container Requirements
 
 ### Dependencies
 
-The following dependencies are required as part of RunPod platform functionality.
+The following dependencies are required as part of LooPIN platform functionality.
 
 - `nginx` - Required for proxying ports to the user.
 - `openssh-server` - Required for SSH access to the container.
 - 'pip install jupyterlab' - Required for JupyterLab access to the container.
 
-### runpod.yaml
+### loopin.yaml
 
-Each container foulder needs to have a runpod.yaml file. This file will contain version info as well as services to be ran. The runpod.yaml file should be formatted as follows:
+Each container foulder needs to have a loopin.yaml file. This file will contain version info as well as services to be ran. The loopin.yaml file should be formatted as follows:
 
 ```yaml
 version: '1.0.0'
@@ -49,5 +49,5 @@ docker buildx bake --push
 docker build should be ran from the root of the repository, not from the container folder. The build command should be ran as follows:
 
 ```bash
-docker build -t runpod/<container-name>:<version> -f <container-name>/Dockerfile .
+docker build -t loopin-docker/<container-name>:<version> -f <container-name>/Dockerfile .
 ```
