@@ -49,6 +49,18 @@ RUN pip install notebook==6.5.5
 RUN jupyter contrib nbextension install --user && \
     jupyter nbextension enable --py widgetsnbextension
 
+# Install Cloudflared
+RUN mkdir -p --mode=0755 /usr/share/keyrings && \
+    curl -fsSL https://pkg.cloudflare.com/cloudflare-main.gpg | tee /usr/share/keyrings/cloudflare-main.gpg >/dev/null && \
+    echo 'deb [signed-by=/usr/share/keyrings/cloudflare-main.gpg] https://pkg.cloudflare.com/cloudflared jammy main' | tee /etc/apt/sources.list.d/cloudflared.list && \
+    apt-get update && apt-get install -y cloudflared
+
+# Create directory for Cloudflare certificate
+RUN mkdir -p /root/.cloudflared
+
+# Copy the cert.pem file (make sure it's in the same directory as your Dockerfile)
+COPY cert.pem /root/.cloudflared/cert.pem
+
 # Remove existing SSH host keys
 RUN rm -f /etc/ssh/ssh_host_*
 
@@ -64,9 +76,9 @@ COPY --from=scripts start.sh /
 RUN chmod +x /start.sh
 
 # Welcome Message
-COPY --from=logo runpod.txt /etc/runpod.txt
-RUN echo 'cat /etc/runpod.txt' >> /root/.bashrc
-RUN echo 'echo -e "\nFor detailed documentation and guides, please visit:\n\033[1;34mhttps://docs.runpod.io/\033[0m and \033[1;34mhttps://blog.runpod.io/\033[0m\n\n"' >> /root/.bashrc
+COPY --from=logo loopin.txt /etc/loopin.txt
+RUN echo 'cat /etc/loopin.txt' >> /root/.bashrc
+RUN echo 'echo -e "\nFor detailed documentation and guides, please visit:\n\033[1;34mhttps://docs.loopin.network/\033[0m"' >> /root/.bashrc
 
 # Set the default command for the container
 CMD [ "/start.sh" ]

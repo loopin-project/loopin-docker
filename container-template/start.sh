@@ -81,6 +81,53 @@ start_jupyter() {
     fi
 }
 
+setup_dns_and_start_cloudflare_tunnel() {
+    # Set up DNS using Cloudflare's DNS servers
+    echo "Setting up DNS..."
+    echo -e "nameserver 1.1.1.1\nnameserver 1.0.0.1" | tee /etc/resolv.conf > /dev/null
+
+    # Check if DNS setup was successful
+    if ! grep -q "nameserver 1.1.1.1" /etc/resolv.conf || ! grep -q "nameserver 1.0.0.1" /etc/resolv.conf; then
+        echo "Error: Failed to set up DNS"
+        return 1
+    fi
+
+    # Start Cloudflare tunnel
+    if [[ -z "$GPU_TOKEN_ID" ]]; then
+        echo "Error: GPU_TOKEN_ID is not set"
+        return 1
+    fi
+
+    echo "Checking if Cloudflare tunnel already exists..."
+    if cloudflared tunnel list | grep -q "$GPU_TOKEN_ID"; then
+        echo "Tunnel $GPU_TOKEN_ID already exists. Skipping creation."
+    else
+        echo "Creating Cloudflare tunnel..."
+        cloudflared tunnel create "$GPU_TOKEN_ID" || {
+            echo "Failed to create tunnel. Exiting."
+            return 1
+        }
+    fi
+
+    echo "Setting up DNS route..."
+    cloudflared tunnel route dns "$GPU_TOKEN_ID" "${GPU_TOKEN_ID}.loopin.cloud"
+
+    echo "Starting Cloudflare tunnel..."
+    nohup cloudflared tunnel --name "$GPU_TOKEN_ID" --url http://127.0.0.1:8888 > /cloudflared.log 2>&1 &
+
+    # Wait for the Cloudflare URL to be generated
+    while true; do
+        if grep -q "${GPU_TOKEN_ID}.loopin.cloud" /cloudflared.log; then
+            CLOUDFLARE_URL="https://${GPU_TOKEN_ID}.loopin.cloud"
+            export CLOUDFLARE_URL
+            echo "Cloudflare URL: $CLOUDFLARE_URL"
+            break
+        fi
+        sleep 1
+    done
+}
+
+
 # ---------------------------------------------------------------------------- #
 #                               Main Program                                   #
 # ---------------------------------------------------------------------------- #
@@ -93,6 +140,7 @@ echo "Pod Started"
 
 setup_ssh
 start_jupyter
+setup_dns_and_start_cloudflare_tunnel
 export_env_vars
 
 execute_script "/post_start.sh" "Running post-start script..."
